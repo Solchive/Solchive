@@ -6,10 +6,10 @@ import logo from "@/assets/logo.svg";
 
 const TopBar = () => {
   return (
-    <div className="w-full flex justify-between items-center p-4">
-      <div className="flex gap-2 items-center">
+    <div className="w-full h-[10vh] flex justify-between items-center p-4">
+      <div className="flex gap-3 items-center">
         <img src={logo} className="rounded-md" />
-        <span className="text-lg font-bold">SOLCHIVE</span>
+        <span className="text-lg font-bold">Solchive</span>
       </div>
       {window.solana?.isPhantom ? (
         <WalletMultiButton />
