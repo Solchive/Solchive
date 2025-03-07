@@ -32,11 +32,9 @@ const App = () => {
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <BrowserRouter>
-            <div className="h-screen flex flex-col">
+            <div className="w-[100vw] h-[100vh] overflow-hidden sflex flex-col">
               <TopBar />
-              <div className="flex-1 overflow-auto">
-                <Dashboard />
-              </div>
+              <Dashboard />
             </div>
           </BrowserRouter>
         </WalletModalProvider>
