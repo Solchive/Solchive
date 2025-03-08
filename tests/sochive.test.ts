@@ -277,6 +277,30 @@ describe("solchive", () => {
     // Fetch the account and check if the user was removed
     const account = await program.account.whitelist.fetch(whitelistAccount);
     expect(account.users.length).to.equal(4);
-    expect(account.users).to.not.include(testUser2.publicKey);
+    expect(account.users).to.not.include(testUser1.publicKey);
+  });
+
+  it("Fails when unauthorized user tries to delete whitelist", async () => {
+    try {
+      // Execute the transaction
+      await program.methods
+        .deleteWhitelist(testUser2.publicKey)
+        .accounts({
+          whitelistAccount: whitelistAccount,
+          signer: testUser6.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([testUser6])
+        .rpc();
+
+      // If we reach here, the test failed
+      expect.fail("Transaction should have failed with unauthorized error");
+    } catch (error) {
+      expect(error.message).to.include("Unauthorized");
+    }
+
+    // Fetch the account and check if the user was removed
+    const account = await program.account.whitelist.fetch(whitelistAccount);
+    expect(account.users.length).to.equal(4);
   });
 });
