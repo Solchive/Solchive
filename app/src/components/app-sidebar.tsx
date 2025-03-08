@@ -1,4 +1,13 @@
 import * as React from "react";
+
+import {
+  useConnection,
+  useWallet,
+  useAnchorWallet,
+} from "@solana/wallet-adapter-react";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { SolarchiveClient } from "@/services/solarchive";
+
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -44,21 +53,34 @@ export function AppSidebar({
   isShowWhitelist: boolean;
   setIsShowWhitelist: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  // Whitelist 관련
   const [people, setPeople] = React.useState([{ name: "" }]);
-
   const addPerson = () => {
     setPeople([...people, { name: "" }]);
   };
-
   const removePerson = (index: number) => {
     const newPeople = people.filter((_, i) => i !== index);
     setPeople(newPeople);
   };
-
   const handlePersonChange = (index: number, value: string) => {
     const newPeople = [...people];
     newPeople[index].name = value;
     setPeople(newPeople);
+  };
+
+  // Database 관련
+  const [name, setName] = React.useState("");
+  const [dataType, setDataType] = React.useState("");
+  const [jsonFile, setJsonFile] = React.useState<File | null>(null);
+  const handleCreateDatabase = async () => {
+    try {
+      const fileContent = await jsonFile?.text();
+      if (!fileContent) throw new Error("Please upload the json file");
+
+      // const dataAccount = await solarchiveClient.initializeData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -70,7 +92,16 @@ export function AppSidebar({
       <SidebarHeader>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="defaultViolet">
+            <Button
+              variant="defaultViolet"
+              onClick={() => {
+                if (isShowWhitelist) {
+                  // TODO
+                } else {
+                  handleCreateDatabase();
+                }
+              }}
+            >
               <Pen />
               Create New
             </Button>
@@ -95,25 +126,11 @@ export function AppSidebar({
                     </Label>
                     <Input
                       id="name"
-                      defaultValue="Team Solchive"
+                      placeholder="Whitelist name (max 10 characters)"
                       className="col-span-3"
+                      maxLength={10}
                     />
                   </div>
-                  {/* <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="member" className="text-right">
-                      Member
-                    </Label>
-                    <Input
-                      id="username"
-                      defaultValue="@peduarte"
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <Button size="icon">
-                      <Plus />
-                    </Button>
-                  </div> */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium">Members</h4>
@@ -121,7 +138,8 @@ export function AppSidebar({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={addPerson}
+                        onClick={() => people.length < 5 && addPerson()}
+                        disabled={people.length >= 5}
                       >
                         <PlusCircle />
                       </Button>
@@ -169,7 +187,7 @@ export function AppSidebar({
                     </Label>
                     <Input
                       id="name"
-                      defaultValue="Trading Database - 2025"
+                      placeholder="Trading Database - 2025"
                       className="col-span-3"
                     />
                   </div>
@@ -234,7 +252,6 @@ export function AppSidebar({
           {isShowWhitelist ? <ArrowDownCircle /> : <ArrowUpCircle />}
         </Button>
       </SidebarFooter>
-      {/* <SidebarRail /> */}
     </Sidebar>
   );
 }

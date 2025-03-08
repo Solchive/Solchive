@@ -13,7 +13,6 @@ import {
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import DatabaseTable from "../Table/DatabaseTable/DatabaseTable";
 import { Database, Wallet } from "lucide-react";
-import WhitelistTable from "../Table/WhitelistTable";
 
 const data = {
   // user: {
@@ -41,69 +40,69 @@ const data = {
   whitelist: [
     {
       title: "Whitelist1",
-      url: "/whitelist/1",
+      url: "/whitelistPdaAccount1",
       icon: Wallet,
       isActive: true,
       items: [
         {
           title: "Member1",
           subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelist/1",
+          url: "/whitelistPdaAccount1",
         },
         {
           title: "Member2",
           subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelist/1",
+          url: "/whitelistPdaAccount1",
         },
         {
           title: "Member3",
           subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelist/1",
+          url: "/whitelistPdaAccount1",
         },
       ],
     },
     {
       title: "Whitelist2",
-      url: "/whitelist/2",
+      url: "/whitelistPdaAccount2",
       icon: Wallet,
       isActive: true,
       items: [
         {
           title: "Member1",
           subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelist/2",
+          url: "/whitelistPdaAccount2",
         },
         {
           title: "Member2",
           subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelist/2",
+          url: "/whitelistPdaAccount2",
         },
         {
           title: "Member3",
           subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelist/2",
+          url: "/whitelistPdaAccount2",
         },
       ],
     },
   ],
   database: [
     {
-      title: "Database1",
+      title: "Whitelist1",
       url: "",
       icon: Database,
       isActive: true,
       items: [
         {
           title: "Data1",
-          url: "/database/1",
+          url: "/whitelistPdaAccount1/1",
         },
         {
           title: "Data2",
-          url: "/database/2",
+          url: "/whitelistPdaAccount1/2",
         },
         {
           title: "Data3",
-          url: "/database/3",
+          url: "/whitelistPdaAccount1/3",
         },
       ],
     },
@@ -163,8 +162,11 @@ const Dashboard = () => {
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <div className="grid border">
               <Routes>
-                <Route path="/whitelist/:id" element={<WhitelistTable />} />
-                <Route path="/database/:id" element={<DatabaseTable />} />
+                {/* <Route path="/whitelist/:id" element={<WhitelistTable />} /> */}
+                <Route
+                  path="/:whitelistId/:databaseId"
+                  element={<DatabaseTable />}
+                />
               </Routes>
             </div>
           </div>
