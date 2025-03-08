@@ -17,6 +17,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 export function NavMain({
   items,
@@ -29,14 +30,13 @@ export function NavMain({
     items?: {
       title: string;
       subTitle?: string;
-      url: string;
+      url?: string;
     }[];
   }[];
 }) {
-  console.log(items);
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Archive</SidebarGroupLabel>
+      {/* <SidebarGroupLabel>Archive</SidebarGroupLabel> */}
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible
@@ -60,7 +60,23 @@ export function NavMain({
                       <SidebarMenuSubButton asChild>
                         <a href={subItem.url} className="grid-2 gap-4">
                           <span>{subItem.title}</span>
-                          {subItem.subTitle && <span>{subItem.subTitle}</span>}
+                          {subItem.subTitle && (
+                            <HoverCard>
+                              <HoverCardTrigger>
+                                <span>{subItem.subTitle}</span>
+                              </HoverCardTrigger>
+                              <HoverCardContent>
+                                <div className="flex flex-col gap-2">
+                                  <span className="text-sm font-medium">
+                                    지갑 주소
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {subItem.subTitle}
+                                  </span>
+                                </div>
+                              </HoverCardContent>
+                            </HoverCard>
+                          )}
                         </a>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>

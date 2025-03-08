@@ -1,15 +1,12 @@
-[features]
-seeds = false
-
-[programs.devnet]
+[programs.localnet]
 solarchive = "5YNGLpTaGqUiamL1pW59dPCBZFMfc65oiwZ4X5JJ7EDM"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "devnet"
-wallet = "./phantom-wallet.json"
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

@@ -28,7 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Calendar, Download } from "lucide-react";
+import { Calendar, Download, Filter } from "lucide-react";
 
 import solanaLogo from "@/assets/solana-logo.png";
 
@@ -72,6 +72,7 @@ export function DataTable<TData, TValue>({
     <div>
       {/* header */}
       <div className="flex justify-between items-center py-4">
+        {/* header-left */}
         <div className="flex gap-2">
           <Input
             placeholder="Search on table"
@@ -81,11 +82,11 @@ export function DataTable<TData, TValue>({
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
+              <Button variant="defaultWhite" className="ml-auto">
                 View
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-[200px] z-50">
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
@@ -106,10 +107,19 @@ export function DataTable<TData, TValue>({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {/* header-right */}
         <div className="flex gap-2">
           <Button variant="defaultWhite">
             <Calendar />
             RAW data
+          </Button>
+          <Button variant="defaultWhite">
+            <Calendar />
+            Mar 9, 2025 - Apr 30, 2025
+          </Button>
+          <Button variant="defaultWhite">
+            <Filter />
+            Filters
           </Button>
           <Button variant="defaultWhite">
             <Download />
