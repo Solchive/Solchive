@@ -1,12 +1,13 @@
 import * as React from "react";
 
 import {
+  useAnchorWallet,
   useConnection,
   useWallet,
-  useAnchorWallet,
 } from "@solana/wallet-adapter-react";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { SolarchiveClient } from "@/services/solarchive";
+import { chunkData, createNewDatabase } from "@/utils/createNewDatabase";
+import * as pako from "pako";
+import testData from "../utils/test.json";
 
 import {
   ArrowDownCircle,
@@ -42,6 +43,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import {
+  Keypair,
+  sendAndConfirmTransaction,
+  Transaction,
+} from "@solana/web3.js";
+import {
+  appendSplitData,
+  createSharedDatabase,
+  initializeData,
+} from "@/anchor/setup";
 
 export function AppSidebar({
   data,
@@ -68,19 +79,154 @@ export function AppSidebar({
     setPeople(newPeople);
   };
 
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = React.useState<string>("");
+  const { publicKey, connected } = useWallet();
+  const anchorWallet = useAnchorWallet();
+  const { connection } = useConnection();
+
   // Database 관련
   const [name, setName] = React.useState("");
   const [dataType, setDataType] = React.useState("");
-  const [jsonFile, setJsonFile] = React.useState<File | null>(null);
+  const [jsonFile, setJsonFile] = React.useState<File | undefined>(undefined);
   const handleCreateDatabase = async () => {
     try {
-      const fileContent = await jsonFile?.text();
-      if (!fileContent) throw new Error("Please upload the json file");
+      if (!publicKey || !connected || !anchorWallet) {
+        throw new Error("Please connect the wallet.");
+      }
+      setIsLoading(true);
+      setLoadingMessage("Loading...");
 
-      // const dataAccount = await solarchiveClient.initializeData();
+      // const fileContent = await jsonFile?.text();
+      // if (!fileContent) throw new Error("Please upload the json file");
+
+      const splitDataKeypair = Keypair.generate();
+      console.log("splitDataKeypair: ", splitDataKeypair);
+      const databaseKeypair = Keypair.generate();
+
+      const chunks = chunkData(testData.records);
+      let prevDataAccount = null;
+      let lastTransactionId = null;
+
+      // 1. 초기화
+      const initInstruction = await initializeData(
+        splitDataKeypair,
+        publicKey,
+        anchorWallet
+      );
+      const initTx = new Transaction().add(initInstruction);
+      initTx.feePayer = publicKey;
+      initTx.recentBlockhash = (
+        await connection.getLatestBlockhash()
+      ).blockhash;
+      await anchorWallet.signTransaction(initTx);
+      initTx.partialSign(splitDataKeypair); // sign() 대신 partialSign() 사용
+      const initSignature = await connection.sendTransaction(
+        initTx,
+        [splitDataKeypair],
+        {
+          skipPreflight: false,
+          preflightCommitment: "confirmed",
+          maxRetries: 5,
+        }
+      );
+      await connection.confirmTransaction(initSignature);
+      console.log("초기화 완료:", initSignature);
+
+      // 2. SharedDatabase 생성
+      console.log("\n첫 번째 청크 저장 중...");
+      const appendInstruction = await appendSplitData(
+        splitDataKeypair,
+        chunks[0],
+        null,
+        undefined,
+        publicKey,
+        anchorWallet
+      );
+      const appendTx = new Transaction().add(appendInstruction);
+      appendTx.feePayer = publicKey;
+      appendTx.recentBlockhash = (
+        await connection.getLatestBlockhash()
+      ).blockhash;
+      await anchorWallet.signTransaction(appendTx);
+      appendTx.sign(splitDataKeypair);
+      const appendSignature = await sendAndConfirmTransaction(
+        connection,
+        appendTx,
+        [splitDataKeypair]
+      );
+      await connection.confirmTransaction(appendSignature);
+      prevDataAccount = splitDataKeypair.publicKey;
+      lastTransactionId = appendSignature;
+      console.log("첫 번째 청크 저장 완료:", appendSignature);
+
+      // 3. 나머지 청크 저장
+      console.log("\n나머지 청크 저장 중...");
+      for (let i = 1; i < chunks.length; i++) {
+        const nextAppendInstruction = await appendSplitData(
+          splitDataKeypair,
+          chunks[i],
+          lastTransactionId,
+          prevDataAccount,
+          publicKey,
+          anchorWallet
+        );
+        const nextTx = new Transaction().add(nextAppendInstruction);
+        nextTx.feePayer = publicKey;
+        nextTx.recentBlockhash = (
+          await connection.getLatestBlockhash()
+        ).blockhash;
+        await anchorWallet.signTransaction(nextTx);
+        nextTx.sign(splitDataKeypair);
+        const nextSignature = await sendAndConfirmTransaction(
+          connection,
+          nextTx,
+          [splitDataKeypair]
+        );
+        await connection.confirmTransaction(nextSignature);
+        prevDataAccount = splitDataKeypair.publicKey;
+        lastTransactionId = nextSignature;
+        console.log(`청크 ${i + 1} 저장 완료:`, nextSignature);
+
+        // 트랜잭션 간 딜레이
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      // 4. 데이터베이스 생성
+      console.log("\n데이터베이스 생성 중...");
+      const dbInstruction = await createSharedDatabase(
+        databaseKeypair,
+        name,
+        dataType,
+        splitDataKeypair.publicKey,
+        publicKey,
+        anchorWallet
+      );
+      const dbTx = new Transaction().add(dbInstruction);
+      dbTx.feePayer = publicKey;
+      dbTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      await anchorWallet.signTransaction(dbTx);
+      dbTx.sign(databaseKeypair);
+      const dbSignature = await sendAndConfirmTransaction(connection, dbTx, [
+        databaseKeypair,
+      ]);
+      await connection.confirmTransaction(dbSignature);
+      console.log("데이터베이스 생성 완료:", dbSignature);
+
+      setName("");
+      setDataType("");
+      setJsonFile(undefined);
+      setIsLoading(false);
+      setLoadingMessage("");
     } catch (error) {
       console.error(error);
+      setLoadingMessage("Transaction failed.");
     }
+  };
+
+  const handleDialogClose = () => {
+    setLoadingMessage("");
+    setIsLoading(false);
   };
 
   return (
@@ -90,18 +236,9 @@ export function AppSidebar({
       className={`h-[90vh] px-4 py-2 ${isShowWhitelist && "bg-gray-50"}`}
     >
       <SidebarHeader>
-        <Dialog>
+        <Dialog onOpenChange={(open) => !open && handleDialogClose()}>
           <DialogTrigger asChild>
-            <Button
-              variant="defaultViolet"
-              onClick={() => {
-                if (isShowWhitelist) {
-                  // TODO
-                } else {
-                  handleCreateDatabase();
-                }
-              }}
-            >
+            <Button variant="defaultViolet">
               <Pen />
               Create New
             </Button>
@@ -189,18 +326,20 @@ export function AppSidebar({
                       id="name"
                       placeholder="Trading Database - 2025"
                       className="col-span-3"
+                      onChange={(e) => setName(e.target.value)}
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="type" className="text-right">
                       Data Type
                     </Label>
-                    <Select>
+                    <Select onValueChange={(value) => setDataType(value)}>
                       <SelectTrigger className="col-span-3 w-full">
                         <SelectValue placeholder="Select data type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="default">Default</SelectItem>
+                        <SelectItem value="task">Task</SelectItem>
                         <SelectItem value="chat">Chat</SelectItem>
                       </SelectContent>
                     </Select>
@@ -213,13 +352,21 @@ export function AppSidebar({
                       type="file"
                       accept=".json"
                       className="col-span-3 w-full"
+                      onChange={(e) => setJsonFile(e.target.files?.[0])}
                     />
                   </div>
                 </>
               )}
             </div>
-            <DialogFooter>
-              <Button variant="defaultViolet" type="submit">
+            <DialogFooter className="gap-4 items-center">
+              {isLoading && (
+                <div className="text-sm text-red-500">{loadingMessage}</div>
+              )}
+              <Button
+                variant="defaultViolet"
+                type="submit"
+                onClick={handleCreateDatabase}
+              >
                 Create
               </Button>
             </DialogFooter>

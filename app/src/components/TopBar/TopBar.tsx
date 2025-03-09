@@ -3,8 +3,13 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 import logo from "@/assets/logo.svg";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Button } from "../ui/button";
+// import { Button } from "../ui/button";
 
 const TopBar = () => {
+  const { publicKey, connected } = useWallet();
+
   return (
     <div className="w-full h-[10vh] flex justify-between items-center p-4">
       <div className="flex gap-3 items-center">
@@ -23,6 +28,10 @@ const TopBar = () => {
           Download Wallet
         </a>
       )}
+      {/* <Button variant="defaultWhite">
+        연결됨: {publicKey?.toString().slice(0, 4)}...
+        {publicKey?.toString().slice(-4)}
+      </Button> */}
     </div>
   );
 };
