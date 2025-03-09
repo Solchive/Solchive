@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, useSearchParams } from "react-router-dom";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import {
@@ -12,134 +12,44 @@ import {
 } from "@/components/ui/breadcrumb";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import DatabaseTable from "../Table/DatabaseTable/DatabaseTable";
-import { Database, Wallet } from "lucide-react";
-
-const data = {
-  // user: {
-  //   name: "shadcn",
-  //   email: "m@example.com",
-  //   avatar: "/avatars/shadcn.jpg",
-  // },
-  // teams: [
-  //   {
-  //     name: "Acme Inc",
-  //     logo: GalleryVerticalEnd,
-  //     plan: "Enterprise",
-  //   },
-  //   {
-  //     name: "Acme Corp.",
-  //     logo: AudioWaveform,
-  //     plan: "Startup",
-  //   },
-  //   {
-  //     name: "Evil Corp.",
-  //     logo: Command,
-  //     plan: "Free",
-  //   },
-  // ],
-  whitelist: [
-    {
-      title: "Whitelist1",
-      url: "/whitelistPdaAccount1",
-      icon: Wallet,
-      isActive: true,
-      items: [
-        {
-          title: "Member1",
-          subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelistPdaAccount1",
-        },
-        {
-          title: "Member2",
-          subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelistPdaAccount1",
-        },
-        {
-          title: "Member3",
-          subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelistPdaAccount1",
-        },
-      ],
-    },
-    {
-      title: "Whitelist2",
-      url: "/whitelistPdaAccount2",
-      icon: Wallet,
-      isActive: true,
-      items: [
-        {
-          title: "Member1",
-          subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelistPdaAccount2",
-        },
-        {
-          title: "Member2",
-          subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelistPdaAccount2",
-        },
-        {
-          title: "Member3",
-          subTitle: "0xasjfl;sdjfklasj;ljl",
-          url: "/whitelistPdaAccount2",
-        },
-      ],
-    },
-  ],
-  database: [
-    {
-      title: "Whitelist1",
-      url: "",
-      icon: Database,
-      isActive: true,
-      items: [
-        {
-          title: "Data1",
-          url: "/whitelistPdaAccount1/1",
-        },
-        {
-          title: "Data2",
-          url: "/whitelistPdaAccount1/2",
-        },
-        {
-          title: "Data3",
-          url: "/whitelistPdaAccount1/3",
-        },
-      ],
-    },
-  ],
-  // projects: [
-  //   {
-  //     name: "Design Engineering",
-  //     url: "#",
-  //     icon: Frame,
-  //   },
-  //   {
-  //     name: "Sales & Marketing",
-  //     url: "#",
-  //     icon: PieChart,
-  //   },
-  //   {
-  //     name: "Travel",
-  //     url: "#",
-  //     icon: Map,
-  //   },
-  // ],
-};
+import { useWhitelistStore } from "@/store/whitelistStore";
+import { useDatabaseStore } from "@/store/databaseStore";
+import RawDataTable from "../Table/RawDataTable/RawDataTable";
 
 const Dashboard = () => {
-  const [category, id] = window.location.pathname.split("/").filter(Boolean);
+  const [whitelistId, databaseId] = window.location.pathname
+    .split("/")
+    .filter(Boolean);
+  const [searchParams] = useSearchParams();
+  const params = new URLSearchParams(searchParams);
+  const currentRawData = params.get("rawData");
 
-  const [isShowWhitelist, setIsShowWhitelist] = useState<boolean>(
-    category == "whitelist"
-  );
+  const [isShowWhitelist, setIsShowWhitelist] = useState<boolean>(false);
 
-  // data fetch
+  const { whitelists, selectedWhitelist, selectWhitelist, fetchWhitelists } =
+    useWhitelistStore();
+  console.log("whitelist nav", whitelists);
+
+  const { databases, fetchDatabases } = useDatabaseStore();
+  console.log("database nav", databases);
+  useEffect(() => {
+    fetchWhitelists;
+    fetchDatabases();
+  }, [fetchWhitelists, fetchDatabases]);
+
+  useEffect(() => {
+    fetchWhitelists();
+    fetchDatabases();
+  }, [window.location.pathname]);
 
   return (
     <div className="h-[90vh]">
       <SidebarProvider>
         <AppSidebar
-          data={data}
+          data={{
+            whitelist: whitelists,
+            database: databases,
+          }}
           isShowWhitelist={isShowWhitelist}
           setIsShowWhitelist={setIsShowWhitelist}
         />
@@ -149,11 +59,11 @@ const Dashboard = () => {
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">{category}</BreadcrumbLink>
+                    <BreadcrumbLink href="#">{whitelistId}</BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage>{id}</BreadcrumbPage>
+                    <BreadcrumbPage>{databaseId}</BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
@@ -165,7 +75,13 @@ const Dashboard = () => {
                 {/* <Route path="/whitelist/:id" element={<WhitelistTable />} /> */}
                 <Route
                   path="/:whitelistId/:databaseId"
-                  element={<DatabaseTable />}
+                  element={
+                    currentRawData === "true" ? (
+                      <RawDataTable />
+                    ) : (
+                      <DatabaseTable />
+                    )
+                  }
                 />
               </Routes>
             </div>

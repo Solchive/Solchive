@@ -3,7 +3,8 @@ import { DataTable } from "./data-table";
 import { ArrowUpDown, CircleDot } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { dummy } from "./dummy";
+import { dummy1, dummy2, dummy3 } from "./dummy";
+import { useDatabaseStore } from "@/store/databaseStore";
 
 const generateColumns = (data: any[]) => {
   if (data.length === 0) return [];
@@ -80,11 +81,19 @@ const generateColumns = (data: any[]) => {
 };
 
 const DatabaseTable = () => {
-  const dynamicColumns = generateColumns(dummy);
+  const [whitelistId, databaseId] = window.location.pathname
+    .split("/")
+    .filter(Boolean);
+
+  const data =
+    databaseId === "9qQVcJyg3Sm1VXz6X2RQv3Lwgz9KvmN8KbgLBzQPcPU1"
+      ? dummy1
+      : dummy3;
+  const dynamicColumns = generateColumns(data);
 
   return (
     <div className="container mx-auto py-10">
-      <DataTable columns={dynamicColumns} data={dummy} />
+      <DataTable columns={dynamicColumns} data={data} />
     </div>
   );
 };

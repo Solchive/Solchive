@@ -31,6 +31,7 @@ import {
 import { Calendar, Download, Filter } from "lucide-react";
 
 import solanaLogo from "@/assets/solana-logo.png";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -67,6 +68,9 @@ export function DataTable<TData, TValue>({
       columnVisibility,
     },
   });
+
+  const nav = useNavigate();
+  const [searchParams] = useSearchParams();
 
   return (
     <div>
@@ -109,7 +113,19 @@ export function DataTable<TData, TValue>({
         </div>
         {/* header-right */}
         <div className="flex gap-2">
-          <Button variant="defaultWhite">
+          <Button
+            variant="defaultWhite"
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              const currentRawData = params.get("rawData");
+              if (currentRawData === "true") {
+                params.set("rawData", "false");
+              } else {
+                params.set("rawData", "true");
+              }
+              nav(`?${params.toString()}`);
+            }}
+          >
             <Calendar />
             RAW data
           </Button>
@@ -121,14 +137,33 @@ export function DataTable<TData, TValue>({
             <Filter />
             Filters
           </Button>
-          <Button variant="defaultWhite">
+          <Button
+            variant="defaultWhite"
+            onClick={() => {
+              // JSON 데이터를 문자열로 변환
+              const jsonString = JSON.stringify(data, null, 2);
+              // Blob 객체 생성
+              const blob = new Blob([jsonString], { type: "application/json" });
+              // 다운로드 링크 생성
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "test.json";
+              // 링크 클릭하여 다운로드 시작
+              document.body.appendChild(link);
+              link.click();
+              // cleanup
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(url);
+            }}
+          >
             <Download />
-            Download CSV
+            Download Data
           </Button>
-          <Button variant="defaultWhite">
+          {/* <Button variant="defaultWhite">
             <img src={solanaLogo} className="h-full" />
             Pool : 0.85 Sol
-          </Button>
+          </Button> */}
         </div>
       </div>
       {/* body */}

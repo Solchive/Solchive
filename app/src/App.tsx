@@ -16,7 +16,12 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 
 import Dashboard from "./components/Dashboard/Dashboard";
 import TopBar from "./components/TopBar/TopBar";
-import { getAllSharedDatabases } from "./anchor/setup";
+import {
+  getAllSharedDatabases,
+  getAllSplitData,
+  getOwnerSplitData,
+} from "./anchor/setup";
+import { Toaster } from "sonner";
 
 const App = () => {
   const network = WalletAdapterNetwork.Devnet;
@@ -34,7 +39,9 @@ const App = () => {
     if (!wallets) return;
     const getData = async () => {
       const allDatabases = await getAllSharedDatabases();
-      console.log(allDatabases);
+      const allSplitData = await getAllSplitData();
+      // console.log(allDatabases);
+      // console.log(allSplitData);
     };
     getData();
   }, [wallets]);
@@ -47,6 +54,7 @@ const App = () => {
             <div className="w-[100vw] h-[100vh] overflow-hidden sflex flex-col">
               <TopBar />
               <Dashboard />
+              <Toaster />
             </div>
           </BrowserRouter>
           {/* <WhitelistState /> */}

@@ -25,14 +25,7 @@
         {
           "name": "owner",
           "isMut": false,
-          "isSigner": true,
-          "relations": ["split_data"]
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111",
-          "isMut": false,
-          "isSigner": false
+          "isSigner": true
         }
       ],
       "args": [
@@ -54,11 +47,6 @@
           "name": "database",
           "isMut": true,
           "isSigner": true
-        },
-        {
-          "name": "last_split_data",
-          "isMut": false,
-          "isSigner": false
         },
         {
           "name": "owner",

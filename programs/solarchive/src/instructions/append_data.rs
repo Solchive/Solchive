@@ -3,11 +3,10 @@ use crate::state::*;
 
 #[derive(Accounts)]
 pub struct AppendData<'info> {
-    #[account(mut, has_one = owner)]
+    #[account(mut)]
     pub split_data: Account<'info, SplitData>,
     pub prev_data: Option<Account<'info, SplitData>>,
     pub owner: Signer<'info>,
-    pub system_program: Program<'info, System>
 }
 
 pub fn append_data(ctx: Context<AppendData>, json_data:String, prev_id: String) -> Result<()> {

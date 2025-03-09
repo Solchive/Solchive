@@ -10,7 +10,7 @@ pub struct CreateDatabase<'info> {
     )]
     pub database: Account<'info, SharedDatabase>,
 
-    pub last_split_data: Account<'info, SplitData>,
+    // pub last_split_data: Account<'info, SplitData>,
 
     #[account(mut)]
     pub owner: Signer<'info>,
