@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, useSearchParams } from "react-router-dom";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import {
@@ -10,52 +10,77 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import DataTable from "../DataTable/DataTable";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import DatabaseTable from "../Table/DatabaseTable/DatabaseTable";
+import { useWhitelistStore } from "@/store/whitelistStore";
+import { useDatabaseStore } from "@/store/databaseStore";
+import RawDataTable from "../Table/RawDataTable/RawDataTable";
 
 const Dashboard = () => {
+  const [whitelistId, databaseId] = window.location.pathname
+    .split("/")
+    .filter(Boolean);
+  const [searchParams] = useSearchParams();
+  const params = new URLSearchParams(searchParams);
+  const currentRawData = params.get("rawData");
+
+  const [isShowWhitelist, setIsShowWhitelist] = useState<boolean>(false);
+
+  const { whitelists, selectedWhitelist, selectWhitelist, fetchWhitelists } =
+    useWhitelistStore();
+  console.log("whitelist nav", whitelists);
+
+  const { databases, fetchDatabases } = useDatabaseStore();
+  console.log("database nav", databases);
+  useEffect(() => {
+    fetchWhitelists;
+    fetchDatabases();
+  }, [fetchWhitelists, fetchDatabases]);
+
+  useEffect(() => {
+    fetchWhitelists();
+    fetchDatabases();
+  }, [window.location.pathname]);
+
   return (
-    <div className="">
+    <div className="h-[90vh]">
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar
+          data={{
+            whitelist: whitelists,
+            database: databases,
+          }}
+          isShowWhitelist={isShowWhitelist}
+          setIsShowWhitelist={setIsShowWhitelist}
+        />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
             <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">
-                      Building Your Application
-                    </BreadcrumbLink>
+                    <BreadcrumbLink href="#">{whitelistId}</BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                    <BreadcrumbPage>{databaseId}</BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="grid bg-black">
+            <div className="grid border">
               <Routes>
-                <Route path="/building-app" element={<DataTable />} />
-                <Route path="/data-fetching" element={<DataTable />} />
+                {/* <Route path="/whitelist/:id" element={<WhitelistTable />} /> */}
                 <Route
-                  path="/"
+                  path="/:whitelistId/:databaseId"
                   element={
-                    <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                      <div className="aspect-video rounded-xl bg-muted/50" />
-                      <div className="aspect-video rounded-xl bg-muted/50" />
-                      <div className="aspect-video rounded-xl bg-muted/50" />
-                    </div>
+                    currentRawData === "true" ? (
+                      <RawDataTable />
+                    ) : (
+                      <DatabaseTable />
+                    )
                   }
                 />
               </Routes>

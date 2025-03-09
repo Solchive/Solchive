@@ -1,0 +1,208 @@
+{
+  "version": "0.1.0",
+  "name": "solarchive",
+  "address": "5YNGLpTaGqUiamL1pW59dPCBZFMfc65oiwZ4X5JJ7EDM",
+  "metadata": {
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "append_data",
+      "discriminator": [253, 252, 83, 74, 115, 63, 140, 142],
+      "accounts": [
+        {
+          "name": "split_data",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "prev_data",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "json_data",
+          "type": "string"
+        },
+        {
+          "name": "prev_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "create_database",
+      "discriminator": [213, 213, 173, 79, 198, 124, 225, 191],
+      "accounts": [
+        {
+          "name": "database",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "data_type",
+          "type": "string"
+        },
+        {
+          "name": "last_id",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "initialize_data",
+      "discriminator": [179, 127, 115, 220, 243, 12, 29, 184],
+      "accounts": [
+        {
+          "name": "split_data",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "SharedDatabase",
+      "discriminator": [46, 18, 83, 245, 19, 125, 253, 174],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "last_id",
+            "type": "publicKey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "data_type",
+            "type": "string"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SplitData",
+      "discriminator": [140, 204, 26, 193, 88, 30, 22, 85],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "data",
+            "type": "string"
+          },
+          {
+            "name": "prev_id",
+            "type": {
+              "option": "string"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "SharedDatabase",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "last_id",
+            "type": "publicKey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "data_type",
+            "type": "string"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SplitData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "data",
+            "type": "string"
+          },
+          {
+            "name": "prev_id",
+            "type": {
+              "option": "string"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

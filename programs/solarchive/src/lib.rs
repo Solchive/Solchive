@@ -23,5 +23,21 @@ pub mod solarchive {
     pub fn create_database(ctx: Context<CreateDatabase>, name: String, data_type: String, last_id: Pubkey) -> Result<()> {
         instructions::create_database(ctx, name, data_type, last_id)
     }
+
+    pub fn create_whitelist(ctx: Context<WhitelistAccounts>, name: String, user: Pubkey) -> Result<()> {
+        instructions::whitelist::create_whitelist(ctx, name, user)
+    }
+    
+    pub fn rename_whitelist(ctx: Context<UpdateAccount>, name: String) -> Result<()> {
+        instructions::whitelist::rename_whitelist(ctx, name)
+    }
+    
+    pub fn add_whitelist(ctx: Context<UpdateAccount>, user: Pubkey) -> Result<()> {
+        instructions::whitelist::add_whitelist(ctx, user)
+    }
+    
+    pub fn delete_whitelist(ctx: Context<UpdateAccount>, user: Pubkey) -> Result<()> {
+        instructions::whitelist::delete_whitelist(ctx, user)
+    }
 }
 

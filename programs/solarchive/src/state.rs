@@ -12,20 +12,16 @@ pub struct SharedDatabase { // 해당 데이터의 정보가 저장될 곳
     pub last_id: Pubkey, // 실제 데이터가 저장된 account id
     pub name: String, // 테이블 이름
     pub data_type: String, // 데이터 종류
-    // pub whitelist: Pubkey, // 해당 데이터의 삭제 권한을 가지고 있는 wallet list
+    pub whitelist: Pubkey, // 해당 데이터의 삭제 권한을 가지고 있는 wallet list
     pub created_at: i64,
 }
 
 // Whitelist
-// #[account]
-// pub struct Whitelist {
-//     pub members: BTreeSet<Pubkey>,  // Whitelisted 지갑 목록
-// }
-// impl Whitelist {
-//     pub fn is_whitelisted(&self, user: &Pubkey) -> bool {
-//         self.members.contains(user)
-//     }
-// }
+#[account]
+pub struct Whitelist {
+    pub name: String,
+    pub users: Vec<Pubkey>,
+}
 
 // Pool
 // #[account]
