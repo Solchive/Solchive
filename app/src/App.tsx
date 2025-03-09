@@ -5,6 +5,10 @@ import {
   ConnectionProvider,
   WalletProvider,
 } from "@solana/wallet-adapter-react";
+import {
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { clusterApiUrl } from "@solana/web3.js";
@@ -12,7 +16,6 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 
 import Dashboard from "./components/Dashboard/Dashboard";
 import TopBar from "./components/TopBar/TopBar";
-import WhitelistState from "./components/whitelist-state";
 import { getAllSharedDatabases } from "./anchor/setup";
 
 const App = () => {
@@ -22,7 +25,10 @@ const App = () => {
   // const endpoint = useMemo(() => clusterApiUrl(network), [network]);
   // localhost
   const endpoint = useMemo(() => "http://127.0.0.1:8899", []);
-  const wallets = useMemo(() => [], [network]);
+  const wallets = useMemo(
+    () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
+    [network]
+  );
 
   useEffect(() => {
     if (!wallets) return;
