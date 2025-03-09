@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Aqe7eBtusZ5D7rwKqJ64LVm9w4ZC2iPRbhX1Rqu9S3wX");
+declare_id!("D3FVceibAfCXFfk2q94MVseCCJVsXsXtJM7B7ykgYSi6");
 
 #[program]
 pub mod solchive {

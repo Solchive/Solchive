@@ -1,5 +1,7 @@
 import * as React from "react";
 
+import * as anchor from "@coral-xyz/anchor";
+
 import {
   useAnchorWallet,
   useConnection,
@@ -45,14 +47,25 @@ import {
 } from "./ui/select";
 import {
   Keypair,
+  PublicKey,
   sendAndConfirmTransaction,
+  SystemProgram,
   Transaction,
 } from "@solana/web3.js";
 import {
   appendSplitData,
   createSharedDatabase,
   initializeData,
+  AnchorWallet,
 } from "@/anchor/setup";
+import {
+  connection,
+  getProgram,
+  createWhitelist,
+  renameWhitelist,
+  addWhitelist,
+  deleteWhitelist,
+} from "@/anchor/whitelist_setup";
 
 export function AppSidebar({
   data,
@@ -64,6 +77,35 @@ export function AppSidebar({
   isShowWhitelist: boolean;
   setIsShowWhitelist: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  // const { publicKey, wallet, connected, signTransaction, signAllTransactions } =
+  //   useWallet();
+  // const [whitelistAccount, setWhitelistAccount] =
+  //   React.useState<PublicKey | null>(null);
+  // React.useEffect(() => {
+  //   if (publicKey) {
+  //     // Calculate the PDA for the whitelist account
+  //     const findWhitelistPDA = async () => {
+  //       if (!wallet || !publicKey) return;
+
+  //       const anchorWallet: AnchorWallet = {
+  //         publicKey,
+  //         signTransaction,
+  //         signAllTransactions,
+  //       };
+
+  //       const program = getProgram(anchorWallet);
+  //       const [whitelistPDA] = PublicKey.findProgramAddressSync(
+  //         [Buffer.from("whitelist_seed"), publicKey.toBuffer()],
+  //         program.programId
+  //       );
+
+  //       setWhitelistAccount(whitelistPDA);
+  //     };
+
+  //     findWhitelistPDA();
+  //   }
+  // }, [publicKey, wallet]);
+
   // Whitelist 관련
   const [people, setPeople] = React.useState([{ name: "" }]);
   const addPerson = () => {
@@ -79,150 +121,326 @@ export function AppSidebar({
     setPeople(newPeople);
   };
 
+  const [whitelistName, setWhitelistName] = React.useState("");
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = React.useState<string>("");
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, wallet, signTransaction, signAllTransactions } =
+    useWallet();
   const anchorWallet = useAnchorWallet();
   const { connection } = useConnection();
 
+  // const createWhitelist = async (
+  //   name: string,
+  //   user: PublicKey,
+  //   publicKey: PublicKey,
+  //   wallet: AnchorWallet
+  // ) => {
+  //   const program = getProgram(wallet);
+
+  //   // Create the PDA for whitelist account
+  //   const [whitelistPDA] = PublicKey.findProgramAddressSync(
+  //     [Buffer.from("whitelist_seed"), publicKey.toBuffer()],
+  //     program.programId
+  //   );
+
+  //   // Find the whitelist PDA
+  //   [whitelistAccount, whitelistBump] = await PublicKey.findProgramAddress(
+  //     [Buffer.from("whitelist_seed"), publicKey.toBuffer()],
+  //     program.programId
+  //   );
+
+  //   const tx = await program.methods
+  //     .createWhitelist(whitelistName, publicKey)
+  //     .accounts({
+  //       whitelistAccount: whitelistAccount,
+  //       owner: owner,
+  //       systemProgram: anchor.web3.SystemProgram.programId,
+  //     })
+  //     .rpc();
+  //   // .instruction();
+
+  //   return tx;
+  // };
+
+  // const handleAddUser = async () => {
+  //   if (!connected || !publicKey || !wallet || !whitelistAccount) {
+  //     setMessage("지갑이 연결되지 않았거나 화이트리스트가 없습니다");
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     setMessage("사용자 추가 중...");
+
+  //     let userPubkey: PublicKey;
+  //     try {
+  //       userPubkey = new PublicKey(userToAdd);
+  //     } catch (e) {
+  //       setMessage("유효한 Solana 공개키를 입력해주세요");
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     const instruction = await addWhitelist(
+  //       whitelistAccount,
+  //       userPubkey,
+  //       publicKey,
+  //       wallet
+  //     );
+
+  //     const connection = getConnection();
+  //     const transaction = new Transaction().add(instruction);
+
+  //     const { blockhash } = await connection.getLatestBlockhash();
+  //     transaction.recentBlockhash = blockhash;
+  //     transaction.feePayer = publicKey;
+
+  //     const signedTx = await wallet.signTransaction(transaction);
+  //     const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+  //     await connection.confirmTransaction(txid);
+
+  //     setMessage(`사용자가 성공적으로 추가되었습니다. Tx ID: ${txid}`);
+  //     setUserToAdd("");
+  //   } catch (error) {
+  //     console.error("사용자 추가 오류:", error);
+  //     setMessage(
+  //       `오류: ${error instanceof Error ? error.message : String(error)}`
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // const handleDeleteUser = async () => {
+  //   if (!connected || !publicKey || !wallet || !whitelistAccount) {
+  //     setMessage("지갑이 연결되지 않았거나 화이트리스트가 없습니다");
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     setMessage("사용자 삭제 중...");
+
+  //     let userPubkey: PublicKey;
+  //     try {
+  //       userPubkey = new PublicKey(userToDelete);
+  //     } catch (e) {
+  //       setMessage("유효한 Solana 공개키를 입력해주세요");
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     const instruction = await deleteWhitelist(
+  //       whitelistAccount,
+  //       userPubkey,
+  //       publicKey,
+  //       wallet
+  //     );
+
+  //     const connection = getConnection();
+  //     const transaction = new Transaction().add(instruction);
+
+  //     const { blockhash } = await connection.getLatestBlockhash();
+  //     transaction.recentBlockhash = blockhash;
+  //     transaction.feePayer = publicKey;
+
+  //     const signedTx = await wallet.signTransaction(transaction);
+  //     const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+  //     await connection.confirmTransaction(txid);
+
+  //     setMessage(`사용자가 성공적으로 삭제되었습니다. Tx ID: ${txid}`);
+  //     setUserToDelete("");
+  //   } catch (error) {
+  //     console.error("사용자 삭제 오류:", error);
+  //     setMessage(
+  //       `오류: ${error instanceof Error ? error.message : String(error)}`
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // const handleRenameWhitelist = async () => {
+  //   if (!connected || !publicKey || !wallet || !whitelistAccount) {
+  //     setMessage("지갑이 연결되지 않았거나 화이트리스트가 없습니다");
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     setMessage("화이트리스트 이름 변경 중...");
+
+  //     const instruction = await renameWhitelist(
+  //       whitelistAccount,
+  //       newName,
+  //       publicKey,
+  //       wallet
+  //     );
+
+  //     const connection = getConnection();
+  //     const transaction = new Transaction().add(instruction);
+
+  //     const { blockhash } = await connection.getLatestBlockhash();
+  //     transaction.recentBlockhash = blockhash;
+  //     transaction.feePayer = publicKey;
+
+  //     const signedTx = await wallet.signTransaction(transaction);
+  //     const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+  //     await connection.confirmTransaction(txid);
+
+  //     setMessage(`화이트리스트 이름이 변경되었습니다. Tx ID: ${txid}`);
+  //     setNewName("");
+  //   } catch (error) {
+  //     console.error("이름 변경 오류:", error);
+  //     setMessage(
+  //       `오류: ${error instanceof Error ? error.message : String(error)}`
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   // Database 관련
-  const [name, setName] = React.useState("");
-  const [dataType, setDataType] = React.useState("");
-  const [jsonFile, setJsonFile] = React.useState<File | undefined>(undefined);
-  const handleCreateDatabase = async () => {
-    try {
-      if (!publicKey || !connected || !anchorWallet) {
-        throw new Error("Please connect the wallet.");
-      }
-      setIsLoading(true);
-      setLoadingMessage("Loading...");
+  // const [name, setName] = React.useState("");
+  // const [dataType, setDataType] = React.useState("");
+  // const [jsonFile, setJsonFile] = React.useState<File | undefined>(undefined);
+  // const handleCreateDatabase = async () => {
+  //   try {
+  //     if (!publicKey || !connected || !anchorWallet) {
+  //       throw new Error("Please connect the wallet.");
+  //     }
+  //     setIsLoading(true);
+  //     setLoadingMessage("Loading...");
 
-      // const fileContent = await jsonFile?.text();
-      // if (!fileContent) throw new Error("Please upload the json file");
+  //     // const fileContent = await jsonFile?.text();
+  //     // if (!fileContent) throw new Error("Please upload the json file");
 
-      const splitDataKeypair = Keypair.generate();
-      console.log("splitDataKeypair: ", splitDataKeypair);
-      const databaseKeypair = Keypair.generate();
+  //     const splitDataKeypair = Keypair.generate();
+  //     console.log("splitDataKeypair: ", splitDataKeypair);
+  //     const databaseKeypair = Keypair.generate();
 
-      const chunks = chunkData(testData.records);
-      let prevDataAccount = null;
-      let lastTransactionId = null;
+  //     const chunks = chunkData(testData.records);
+  //     let prevDataAccount = null;
+  //     let lastTransactionId = null;
 
-      // 1. 초기화
-      const initInstruction = await initializeData(
-        splitDataKeypair,
-        publicKey,
-        anchorWallet
-      );
-      const initTx = new Transaction().add(initInstruction);
-      initTx.feePayer = publicKey;
-      initTx.recentBlockhash = (
-        await connection.getLatestBlockhash()
-      ).blockhash;
-      await anchorWallet.signTransaction(initTx);
-      initTx.partialSign(splitDataKeypair); // sign() 대신 partialSign() 사용
-      const initSignature = await connection.sendTransaction(
-        initTx,
-        [splitDataKeypair],
-        {
-          skipPreflight: false,
-          preflightCommitment: "confirmed",
-          maxRetries: 5,
-        }
-      );
-      await connection.confirmTransaction(initSignature);
-      console.log("초기화 완료:", initSignature);
+  //     // 1. 초기화
+  //     const initInstruction = await initializeData(
+  //       splitDataKeypair,
+  //       publicKey,
+  //       anchorWallet
+  //     );
+  //     const initTx = new Transaction().add(initInstruction);
+  //     initTx.feePayer = publicKey;
+  //     initTx.recentBlockhash = (
+  //       await connection.getLatestBlockhash()
+  //     ).blockhash;
+  //     await anchorWallet.signTransaction(initTx);
+  //     initTx.partialSign(splitDataKeypair); // sign() 대신 partialSign() 사용
+  //     const initSignature = await connection.sendTransaction(
+  //       initTx,
+  //       [splitDataKeypair],
+  //       {
+  //         skipPreflight: false,
+  //         preflightCommitment: "confirmed",
+  //         maxRetries: 5,
+  //       }
+  //     );
+  //     await connection.confirmTransaction(initSignature);
+  //     console.log("초기화 완료:", initSignature);
 
-      // 2. SharedDatabase 생성
-      console.log("\n첫 번째 청크 저장 중...");
-      const appendInstruction = await appendSplitData(
-        splitDataKeypair,
-        chunks[0],
-        null,
-        undefined,
-        publicKey,
-        anchorWallet
-      );
-      const appendTx = new Transaction().add(appendInstruction);
-      appendTx.feePayer = publicKey;
-      appendTx.recentBlockhash = (
-        await connection.getLatestBlockhash()
-      ).blockhash;
-      await anchorWallet.signTransaction(appendTx);
-      appendTx.sign(splitDataKeypair);
-      const appendSignature = await sendAndConfirmTransaction(
-        connection,
-        appendTx,
-        [splitDataKeypair]
-      );
-      await connection.confirmTransaction(appendSignature);
-      prevDataAccount = splitDataKeypair.publicKey;
-      lastTransactionId = appendSignature;
-      console.log("첫 번째 청크 저장 완료:", appendSignature);
+  //     // 2. SharedDatabase 생성
+  //     console.log("\n첫 번째 청크 저장 중...");
+  //     const appendInstruction = await appendSplitData(
+  //       splitDataKeypair,
+  //       chunks[0],
+  //       null,
+  //       undefined,
+  //       publicKey,
+  //       anchorWallet
+  //     );
+  //     const appendTx = new Transaction().add(appendInstruction);
+  //     appendTx.feePayer = publicKey;
+  //     appendTx.recentBlockhash = (
+  //       await connection.getLatestBlockhash()
+  //     ).blockhash;
+  //     await anchorWallet.signTransaction(appendTx);
+  //     appendTx.sign(splitDataKeypair);
+  //     const appendSignature = await sendAndConfirmTransaction(
+  //       connection,
+  //       appendTx,
+  //       [splitDataKeypair]
+  //     );
+  //     await connection.confirmTransaction(appendSignature);
+  //     prevDataAccount = splitDataKeypair.publicKey;
+  //     lastTransactionId = appendSignature;
+  //     console.log("첫 번째 청크 저장 완료:", appendSignature);
 
-      // 3. 나머지 청크 저장
-      console.log("\n나머지 청크 저장 중...");
-      for (let i = 1; i < chunks.length; i++) {
-        const nextAppendInstruction = await appendSplitData(
-          splitDataKeypair,
-          chunks[i],
-          lastTransactionId,
-          prevDataAccount,
-          publicKey,
-          anchorWallet
-        );
-        const nextTx = new Transaction().add(nextAppendInstruction);
-        nextTx.feePayer = publicKey;
-        nextTx.recentBlockhash = (
-          await connection.getLatestBlockhash()
-        ).blockhash;
-        await anchorWallet.signTransaction(nextTx);
-        nextTx.sign(splitDataKeypair);
-        const nextSignature = await sendAndConfirmTransaction(
-          connection,
-          nextTx,
-          [splitDataKeypair]
-        );
-        await connection.confirmTransaction(nextSignature);
-        prevDataAccount = splitDataKeypair.publicKey;
-        lastTransactionId = nextSignature;
-        console.log(`청크 ${i + 1} 저장 완료:`, nextSignature);
+  //     // 3. 나머지 청크 저장
+  //     console.log("\n나머지 청크 저장 중...");
+  //     for (let i = 1; i < chunks.length; i++) {
+  //       const nextAppendInstruction = await appendSplitData(
+  //         splitDataKeypair,
+  //         chunks[i],
+  //         lastTransactionId,
+  //         prevDataAccount,
+  //         publicKey,
+  //         anchorWallet
+  //       );
+  //       const nextTx = new Transaction().add(nextAppendInstruction);
+  //       nextTx.feePayer = publicKey;
+  //       nextTx.recentBlockhash = (
+  //         await connection.getLatestBlockhash()
+  //       ).blockhash;
+  //       await anchorWallet.signTransaction(nextTx);
+  //       nextTx.sign(splitDataKeypair);
+  //       const nextSignature = await sendAndConfirmTransaction(
+  //         connection,
+  //         nextTx,
+  //         [splitDataKeypair]
+  //       );
+  //       await connection.confirmTransaction(nextSignature);
+  //       prevDataAccount = splitDataKeypair.publicKey;
+  //       lastTransactionId = nextSignature;
+  //       console.log(`청크 ${i + 1} 저장 완료:`, nextSignature);
 
-        // 트랜잭션 간 딜레이
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
+  //       // 트랜잭션 간 딜레이
+  //       await new Promise((resolve) => setTimeout(resolve, 1000));
+  //     }
 
-      // 4. 데이터베이스 생성
-      console.log("\n데이터베이스 생성 중...");
-      const dbInstruction = await createSharedDatabase(
-        databaseKeypair,
-        name,
-        dataType,
-        splitDataKeypair.publicKey,
-        publicKey,
-        anchorWallet
-      );
-      const dbTx = new Transaction().add(dbInstruction);
-      dbTx.feePayer = publicKey;
-      dbTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-      await anchorWallet.signTransaction(dbTx);
-      dbTx.sign(databaseKeypair);
-      const dbSignature = await sendAndConfirmTransaction(connection, dbTx, [
-        databaseKeypair,
-      ]);
-      await connection.confirmTransaction(dbSignature);
-      console.log("데이터베이스 생성 완료:", dbSignature);
+  //     // 4. 데이터베이스 생성
+  //     console.log("\n데이터베이스 생성 중...");
+  //     const dbInstruction = await createSharedDatabase(
+  //       databaseKeypair,
+  //       name,
+  //       dataType,
+  //       splitDataKeypair.publicKey,
+  //       publicKey,
+  //       anchorWallet
+  //     );
+  //     const dbTx = new Transaction().add(dbInstruction);
+  //     dbTx.feePayer = publicKey;
+  //     dbTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+  //     await anchorWallet.signTransaction(dbTx);
+  //     dbTx.sign(databaseKeypair);
+  //     const dbSignature = await sendAndConfirmTransaction(connection, dbTx, [
+  //       databaseKeypair,
+  //     ]);
+  //     await connection.confirmTransaction(dbSignature);
+  //     console.log("데이터베이스 생성 완료:", dbSignature);
 
-      setName("");
-      setDataType("");
-      setJsonFile(undefined);
-      setIsLoading(false);
-      setLoadingMessage("");
-    } catch (error) {
-      console.error(error);
-      setLoadingMessage("Transaction failed.");
-    }
-  };
+  //     setName("");
+  //     setDataType("");
+  //     setJsonFile(undefined);
+  //     setIsLoading(false);
+  //     setLoadingMessage("");
+  //   } catch (error) {
+  //     console.error(error);
+  //     setLoadingMessage("Transaction failed.");
+  //   }
+  // };
 
   const handleDialogClose = () => {
     setLoadingMessage("");
@@ -266,6 +484,10 @@ export function AppSidebar({
                       placeholder="Whitelist name (max 10 characters)"
                       className="col-span-3"
                       maxLength={10}
+                      value={whitelistName}
+                      onChange={(e) => {
+                        setWhitelistName(e.target.value);
+                      }}
                     />
                   </div>
                   <div className="space-y-4">
@@ -318,7 +540,7 @@ export function AppSidebar({
                 </>
               ) : (
                 <>
-                  <div className="grid grid-cols-4 items-center gap-4">
+                  {/* <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">
                       Name
                     </Label>
@@ -354,7 +576,7 @@ export function AppSidebar({
                       className="col-span-3 w-full"
                       onChange={(e) => setJsonFile(e.target.files?.[0])}
                     />
-                  </div>
+                  </div> */}
                 </>
               )}
             </div>
@@ -365,7 +587,7 @@ export function AppSidebar({
               <Button
                 variant="defaultViolet"
                 type="submit"
-                onClick={handleCreateDatabase}
+                onClick={() => createWhitelist}
               >
                 Create
               </Button>
